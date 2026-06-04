@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حصن الأمان - حاسبة المنظومات الكبيرة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #0B1828; color: #F5EDD8; display: flex; justify-content: center; align-items: center; min-height: 100dvh; margin: 0; padding: 10px; }
+        .card { background-color: #1C3350; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 100%; max-width: 400px; border: 1px solid #C9A84C; }
+        h2 { color: #C9A84C; text-align: center; margin-bottom: 5px; }
+        .company-name { text-align: center; color: #F5EDD8; font-weight: bold; margin-bottom: 15px; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; border: none; border-radius: 10px; background-color: #0B1828; color: #F5EDD8; border: 1px solid #2c4a6e; }
+        button { width: 100%; padding: 12px; background-color: #C9A84C; color: #0B1828; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        #result { margin-top: 15px; padding: 12px; background-color: #0B1828; border-radius: 10px; text-align: center; color: #C9A84C; border: 1px solid #C9A84C; }
+        .footer { text-align: center; margin-top: 15px; font-size: 12px; color: #C9A84C; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>حاسبة الشحن الذكية</h2>
+    <div class="company-name">حصن الأمان - منظومات متوازية</div>
+    
+    <div class="input-group">
+        <label>فولتية النظام (V)</label>
+        <input type="number" id="voltage" value="52">
+    </div>
+
+    <div class="input-group">
+        <label>عدد البطاريات</label>
+        <input type="number" id="numBatteries" value="1">
+    </div>
+
+    <div class="input-group">
+        <label>سعة البطارية الواحدة (Wh)</label>
+        <input type="number" id="capacityWh" placeholder="5000">
+    </div>
+
+    <div class="input-group">
+        <label>تيار شحن البطارية الواحدة (A)</label>
+        <input type="number" id="batteryCurrent" placeholder="تيار الـ BMS">
+    </div>
+
+    <div class="input-group">
+        <label>عدد الإنفرترات</label>
+        <input type="number" id="numInverters" value="1">
+    </div>
+
+    <div class="input-group">
+        <label>مصدر الشحن (للإنفرتر الواحد)</label>
+        <select id="sourceType" onchange="toggleInput()">
+            <option value="inverterPower">قدرة الإنفرتر (Watts)</option>
+            <option value="inverterCurrent">تيار شحن الإنفرتر (Amps)</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label id="inputLabel">قدرة الإنفرتر (W)</label>
+        <input type="number" id="sourceValue" placeholder="أدخل القيمة">
+    </div>
+
+    <div class="input-group">
+        <label>نسبة الشحن الحالية (%)</label>
+        <input type="number" id="soc" placeholder="20">
+    </div>
+    
+    <button onclick="calculate()">احسب الوقت المتوقع</button>
+    <div id="result">النتيجة ستظهر هنا</div>
+    
+    <div class="footer">إعداد المهندس كرار</div>
+</div>
+
+<script>
+    function toggleInput() {
+        const type = document.getElementById('sourceType').value;
+        document.getElementById('inputLabel').innerText = (type === 'inverterPower') ? "قدرة الإنفرتر (Watts)" : "تيار شحن الإنفرتر (Amps)";
+    }
+
+    function calculate() {
+        const V = parseFloat(document.getElementById('voltage').value);
+        const countBat = parseFloat(document.getElementById('numBatteries').value);
+        const countInv = parseFloat(document.getElementById('numInverters').value);
+        const WhSingle = parseFloat(document.getElementById('capacityWh').value);
+        const battI_Single = parseFloat(document.getElementById('batteryCurrent').value);
+        const sourceValSingle = parseFloat(document.getElementById('sourceValue').value);
+        const type = document.getElementById('sourceType').value;
+        const socPercent = parseFloat(document.getElementById('soc').value);
+        
+        const totalC = (WhSingle * countBat) / V; 
+        const totalBattI = battI_Single * countBat; 
+        
+        // حساب التيار الكلي من جميع الإنفرترات
+        let totalSourceI = (type === 'inverterPower') ? ((sourceValSingle * countInv) / V) : (sourceValSingle * countInv);
+        
+        const finalI = Math.min(totalBattI, totalSourceI);
+        const socCurrent = socPercent / 100;
+        
+        if (isNaN(totalC) || isNaN(totalBattI) || isNaN(sourceValSingle)) {
+            document.getElementById('result').innerText = "يرجى تعبئة جميع الحقول";
+            return;
+        }
+
+        let tBulk = (totalC * (0.9 - socCurrent)) / (finalI * 0.95);
+        if (tBulk < 0) tBulk = 0; 
+        
+        const tTotalHours = tBulk + 0.75; 
+        const hours = Math.floor(tTotalHours);
+        const minutes = Math.round((tTotalHours - hours) * 60);
+        
+        document.getElementById('result').innerText = "الوقت المتوقع: " + hours + " ساعة و " + minutes + " دقيقة";
+    }
+</script>
+
+</body>
+</html>
